@@ -2,8 +2,10 @@ package com.intern.ankan.mqtt;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +27,8 @@ public class MainActivity extends AppCompatActivity {
     String clientId;
     MqttAndroidClient client;
     MqttConnectOptions options;
+    Button subscribe;
+    EditText topic;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
 
         connect = (Button)findViewById(R.id.connect);
         disconnect = (Button)findViewById(R.id.disconnect);
+        topic = (EditText)findViewById(R.id.subEdit);
+        subscribe = (Button)findViewById(R.id.sub_button);
 
         messages = (TextView)findViewById(R.id.status);
         clientId = MqttClient.generateClientId();
@@ -60,6 +66,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        subscribe.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String choice = topic.getText().toString();
+
+                if(TextUtils.isEmpty(choice.trim()))
+                {
+                    Toast.makeText(MainActivity.this, "Topic can't be Empty", Toast.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    subscribe(choice.trim());
+                }
+            }
+        });
+
 
     }
 
@@ -74,7 +96,6 @@ public class MainActivity extends AppCompatActivity {
                     // We are connected
                     Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_SHORT).show();
                     messages.setText("Connected");
-                    subscribe();
 
                     client.setCallback(new MqttCallback() {
                         @Override
@@ -111,6 +132,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
+
     void disconnectBroker(){
 
         if(client != null)
@@ -120,6 +143,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
                     // we are now successfully disconnected
+                    messages.setText("Disconnected");
                 }
 
                 @Override
@@ -134,9 +158,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    void subscribe(){
+    void subscribe(final String topic){
 
-        final String topic = "test/#";
         int qos = 1;
         try {
             IMqttToken subToken = client.subscribe(topic, qos);
