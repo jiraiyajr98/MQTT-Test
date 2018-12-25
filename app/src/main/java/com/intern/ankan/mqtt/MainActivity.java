@@ -3,6 +3,7 @@ package com.intern.ankan.mqtt;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -21,14 +22,21 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button connect;
-    Button disconnect;
-    TextView messages;
-    String clientId;
-    MqttAndroidClient client;
-    MqttConnectOptions options;
-    Button subscribe;
-    EditText topic;
+    //Connect Button
+    private Button connect;
+    //Disonnect Button
+    private Button disconnect;
+    //UI Status
+    private TextView messages;
+    private String clientId;
+    private MqttAndroidClient client;
+    private MqttConnectOptions options;
+    //Subscribe to a particular event
+    private Button subscribe;
+    private EditText publish;
+    private Button publishBtn;
+    private EditText topic;
+    private static final String TAG =" MQTT_TEST";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,17 +47,19 @@ public class MainActivity extends AppCompatActivity {
         disconnect = (Button)findViewById(R.id.disconnect);
         topic = (EditText)findViewById(R.id.subEdit);
         subscribe = (Button)findViewById(R.id.sub_button);
+        publish = (EditText)findViewById(R.id.pub);
+        publishBtn = (Button)findViewById(R.id.pub_button);
+
 
         messages = (TextView)findViewById(R.id.status);
-        clientId = MqttClient.generateClientId();
+       // clientId = MqttClient.generateClientId();
+        clientId = "AnkanHalder";
 
-        options = new MqttConnectOptions();
-        options.setUserName("gvhwtipw");
-        options.setPassword("bxg0FMlYpSgO".toCharArray());
+       // options = new MqttConnectOptions();
+       // options.setUserName("gvhwtipw");
+      //  options.setPassword("bxg0FMlYpSgO".toCharArray());
 
-        clientId = MqttClient.generateClientId();
-        client = new MqttAndroidClient(this.getApplicationContext(), "tcp://m15.cloudmqtt.com:19267",
-                clientId);
+
 
 
         connect.setOnClickListener(new View.OnClickListener() {
@@ -82,14 +92,34 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        publishBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                String type = publish.getText().toString();
+                if(TextUtils.isEmpty(type.trim()))
+                {
+                    Toast.makeText(MainActivity.this, "Publish Topic can't be Empty", Toast.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    publish(type.trim());
+                }
+
+            }
+        });
+
 
     }
 
 
-    void connectBroker(){
+    //Function Connect
+   private void connectBroker(){
 
         try {
-            IMqttToken token = client.connect(options);
+            client = new MqttAndroidClient(this.getApplicationContext(), "tcp://test.mosquitto.org:1883",
+                    clientId);
+            IMqttToken token = client.connect();
             token.setActionCallback(new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
@@ -120,6 +150,8 @@ public class MainActivity extends AppCompatActivity {
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
                     // Something went wrong e.g. connection timeout or firewall problems
                     Toast.makeText(MainActivity.this, "Failed "+ exception.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.d(TAG,exception.getMessage());
+                    exception.printStackTrace();
 
                 }
             });
@@ -131,10 +163,20 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void publish(String topic){
+
+        String message = topic+":-> New Message";
+        try {
+            client.publish(topic, message.getBytes(),0,false);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
 
 
 
-    void disconnectBroker(){
+    //Function Disconnect
+    private void disconnectBroker(){
 
         if(client != null)
         try {
@@ -157,8 +199,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-    void subscribe(final String topic){
+    //Function Subscribe
+    private void subscribe(final String topic){
 
         int qos = 1;
         try {
